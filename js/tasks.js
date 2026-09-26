@@ -47,13 +47,21 @@
       tone: days <= 2 ? 'red' : days <= 3 ? 'orange' : days <= 7 ? 'yellow' : 'green'
     };
   }
+  function dashboardTasks(tasks, filter, today = dateKey()) {
+    if (filter === 'done') return tasks.filter(t => t.status === 'concluida');
+    if (!['pending', 'urgent', 'week'].includes(filter)) return tasks;
+    return tasks.filter(task => {
+      if (task.status !== 'pendente') return false;
+      const days = daysUntil(task.dataEntrega, today);
+      return filter === 'pending' || (filter === 'urgent' ? days <= 2 : days >= 0 && days <= 7);
+    });
+  }
   function counts(tasks, today = dateKey()) {
-    const pending = tasks.filter(t => t.status === 'pendente');
     return {
-      pending: pending.length,
-      urgent: pending.filter(t => daysUntil(t.dataEntrega, today) <= 2).length,
-      week: pending.filter(t => { const days = daysUntil(t.dataEntrega, today); return days >= 0 && days <= 7; }).length,
-      done: tasks.filter(t => t.status === 'concluida').length
+      pending: dashboardTasks(tasks, 'pending', today).length,
+      urgent: dashboardTasks(tasks, 'urgent', today).length,
+      week: dashboardTasks(tasks, 'week', today).length,
+      done: dashboardTasks(tasks, 'done', today).length
     };
   }
   function week(today = dateKey()) {
@@ -100,5 +108,5 @@
       demonstracao: { atividadeIds: atividades.map(t => t.id), disciplinaIds: disciplinas.map(d => d.id) }
     };
   }
-  window.OrgTasks = { dateKey, fromKey, validDate, addDays, daysUntil, score, ordered, deadline, counts, week, normalize, search, duration, timeRange, formatDate, id, demo, priorityNames, types };
+  window.OrgTasks = { dateKey, fromKey, validDate, addDays, daysUntil, score, ordered, deadline, dashboardTasks, counts, week, normalize, search, duration, timeRange, formatDate, id, demo, priorityNames, types };
 })();

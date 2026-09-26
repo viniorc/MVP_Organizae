@@ -8,6 +8,8 @@
   let selectedDiscipline = null;
   let selectedDay = T.dateKey();
   let query = '';
+  let dashboardFilter = null;
+  const dashboardFilterLabels = { pending: 'Pendentes', urgent: 'Urgentes', week: 'Esta semana', done: 'Concluídas' };
   let onboardingStep = 'welcome';
   let previousFocus = null;
   let toastTimer;
@@ -98,10 +100,22 @@
   function dashboardView() {
     const state = S.get();
     const counts = T.counts(state.atividades);
-    return `<div class="page-heading dashboard-heading"><div><div class="eyebrow">SUA ROTINA, COM MAIS LEVEZA</div><h1>Olá, ${esc(state.perfil.nome)} <span class="wave">👋</span></h1><p>Veja como está sua semana.</p></div><span class="today-tag">${icon('sun')} Um bom dia para se organizar</span></div><div class="search-wrap">${icon('search')}<label class="sr-only" for="task-search">Buscar atividade ou disciplina</label><input id="task-search" type="search" placeholder="Buscar atividade ou disciplina" value="${esc(query)}" autocomplete="off"><span class="search-hint">Tudo no seu lugar</span></div><div class="stats">${[['pending', 'book', 'Pendentes', 'purple', 'Para colocar em dia'], ['urgent', 'fire', 'Urgentes', 'red', 'Pedem sua atenção'], ['week', 'calendar', 'Esta semana', 'blue', 'Entregas nos próximos 7 dias'], ['done', 'check', 'Concluídas', 'teal', 'Uma coisa a menos']].map(([key, symbol, label, color, caption]) => `<div class="stat-card"><span class="stat-icon ${color}">${icon(symbol)}</span><span class="stat-label">${label}</span><strong data-count="${key}">${counts[key]}</strong><small>${caption}</small></div>`).join('')}</div><div id="dashboard-results">${dashboardResults()}</div>`;
+    return `<div class="page-heading dashboard-heading"><div><div class="eyebrow">SUA ROTINA, COM MAIS LEVEZA</div><h1>Olá, ${esc(state.perfil.nome)} <span class="wave">👋</span></h1><p>Veja como está sua semana.</p></div><span class="today-tag">${icon('sun')} Um bom dia para se organizar</span></div><div class="search-wrap">${icon('search')}<label class="sr-only" for="task-search">Buscar atividade ou disciplina</label><input id="task-search" type="search" placeholder="Buscar atividade ou disciplina" value="${esc(query)}" autocomplete="off"><span class="search-hint">Tudo no seu lugar</span></div><div class="stats">${[['pending', 'book', 'Pendentes', 'purple', 'Para colocar em dia'], ['urgent', 'fire', 'Urgentes', 'red', 'Pedem sua atenção'], ['week', 'calendar', 'Esta semana', 'blue', 'Entregas nos próximos 7 dias'], ['done', 'check', 'Concluídas', 'teal', 'Uma coisa a menos']].map(([key, symbol, label, color, caption]) => `<button type="button" class="stat-card ${dashboardFilter === key ? 'is-active' : ''}" data-action="filter-dashboard" data-filter="${key}" aria-pressed="${dashboardFilter === key}" aria-controls="dashboard-results"><span class="stat-icon ${color}">${icon(symbol)}</span><span class="stat-label">${label}</span><strong data-count="${key}">${counts[key]}</strong><small>${caption}</small></button>`).join('')}</div><div id="dashboard-results">${dashboardResults()}</div>`;
   }
   function dashboardResults() {
     const state = S.get();
+    if (dashboardFilter) {
+      const filtered = T.dashboardTasks(state.atividades, dashboardFilter);
+      const sorted = dashboardFilter === 'done' ? filtered : T.ordered(filtered);
+      const found = T.search(sorted, state.disciplinas, query);
+      const messages = {
+        pending: 'Nenhuma atividade pendente no momento.',
+        urgent: 'Nenhum prazo urgente no momento.',
+        week: 'Nenhuma atividade pendente com entrega nos próximos 7 dias.',
+        done: 'As atividades que você concluir vão aparecer aqui.'
+      };
+      return `<section class="section"><div class="section-heading dashboard-filter-heading"><h2>${dashboardFilterLabels[dashboardFilter]}<span class="count-badge" role="status">${found.length}</span></h2><button class="text-link" data-action="clear-dashboard-filter">${icon('back')}Voltar à visão geral</button></div>${found.length ? `<div class="task-grid">${found.map(task => taskCard(task)).join('')}</div>` : emptyState('Nenhuma atividade encontrada.', query.trim() ? 'Tente buscar por outro título ou disciplina neste filtro.' : messages[dashboardFilter])}</section>`;
+    }
     if (query.trim()) {
       const found = T.search(state.atividades, state.disciplinas, query);
       return `<section class="section"><div class="section-heading"><h2>Resultados da busca <span class="count-badge">${found.length}</span></h2></div>${found.length ? `<div class="task-grid search-results">${found.map(t => taskCard(t)).join('')}</div>` : emptyState('Nenhuma atividade encontrada.', 'Tente buscar por outro título ou disciplina.')}</section>`;
@@ -143,9 +157,19 @@
     const done = tasks.filter(t => t.status === 'concluida');
     return `${button('Minhas disciplinas', 'navigate', 'text-button', 'data-screen="disciplinas"', 'back')}<div class="page-heading heading-with-action"><div><span class="large-icon ${disciplineColor(selectedDiscipline)}">${icon('book')}</span><h1>${esc(disciplineName(selectedDiscipline))}</h1><p>Suas atividades, do próximo passo ao que já foi feito.</p></div>${button('Nova atividade', 'new-task', 'primary', `data-discipline="${esc(selectedDiscipline)}"`)}</div><section class="section"><div class="section-heading"><h2>Próximas<span class="count-badge">${pending.length}</span></h2></div>${pending.length ? `<div class="task-grid">${pending.map(t => taskCard(t)).join('')}</div>` : '<div class="panel small-empty">Nenhuma atividade pendente nesta disciplina.</div>'}</section><section class="section"><div class="section-heading"><h2>${icon('check', 'green-text')}Concluídas<span class="count-badge">${done.length}</span></h2></div>${done.length ? `<div class="panel">${done.map(t => taskRow(t)).join('')}</div>` : '<div class="panel small-empty">As atividades concluídas vão aparecer aqui.</div>'}</section>`;
   }
+  function selectDashboardFilter(filter) {
+    dashboardFilter = filter;
+    document.querySelectorAll('[data-action="filter-dashboard"]').forEach(card => {
+      const active = card.dataset.filter === filter;
+      card.classList.toggle('is-active', active);
+      card.setAttribute('aria-pressed', String(active));
+    });
+    document.getElementById('dashboard-results').innerHTML = dashboardResults();
+  }
   function navigate(next) {
     screen = next;
     query = '';
+    dashboardFilter = null;
     render();
     document.getElementById('main')?.focus({ preventScroll: true });
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -271,6 +295,15 @@
       case 'welcome': onboardingStep = 'welcome'; render(); break;
       case 'demo': demoLoad(); break;
       case 'navigate': navigate(el.dataset.screen); break;
+      case 'filter-dashboard': selectDashboardFilter(dashboardFilter === el.dataset.filter ? null : el.dataset.filter); break;
+      case 'clear-dashboard-filter': {
+        const previousFilter = dashboardFilter;
+        query = '';
+        document.getElementById('task-search').value = '';
+        selectDashboardFilter(null);
+        document.querySelector(`[data-filter="${previousFilter}"]`)?.focus({ preventScroll: true });
+        break;
+      }
       case 'new-task': taskForm(null, el.dataset.discipline || ''); break;
       case 'details': taskDetails(id); break;
       case 'edit-task': taskForm(id); break;

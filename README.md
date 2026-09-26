@@ -26,6 +26,7 @@ Dados de `file://`, `http://localhost` e de uma publicação no GitHub Pages per
 
 - Onboarding e perfil rápido; orientação para a primeira atividade.
 - Dashboard com indicadores de pendentes, urgentes, entregas nos próximos sete dias e concluídas.
+- Clique em um indicador do Dashboard para listar suas atividades. O card selecionado fica destacado, e a busca filtra essa lista por título ou disciplina. Clique novamente no card para desativar o filtro ou use **Voltar à visão geral** para restaurar o Dashboard e limpar a busca.
 - Atividades: criação, detalhes, edição, exclusão confirmada e conclusão com animação e toast.
 - Seções de atenção, planejamento para hoje e prazos agrupados.
 - Priorização determinística por atraso, proximidade do prazo e prioridade informada.

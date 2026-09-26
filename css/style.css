@@ -175,6 +175,11 @@ p { color: var(--muted-strong); }
 .search-hint { display: none; white-space: nowrap; font-size: .75rem; color: #818597; }
 .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 32px; }
 .stat-card { background: white; border: 1px solid var(--border); border-radius: 13px; padding: 17px; position: relative; display: grid; grid-template-columns: 1fr auto; align-items: center; box-shadow: var(--shadow); }
+.stat-card { text-align: left; min-width: 0; transition: border-color .16s, box-shadow .16s; }
+.stat-card:hover { border-color: #bfc0ef; box-shadow: 0 4px 14px rgb(91 95 239 / 8%); }
+.stat-card.is-active { border-color: var(--primary); box-shadow: 0 0 0 2px rgb(91 95 239 / 15%); }
+.stat-card.is-active .stat-label { color: var(--primary-dark); font-weight: 650; }
+.dashboard-filter-heading { flex-wrap: wrap; }
 .stat-icon { display: grid; place-items: center; width: 31px; height: 31px; border-radius: 9px; grid-column: 2; grid-row: 1 / 3; }
 .stat-icon .icon { width: 18px; height: 18px; }
 .stat-label { color: var(--muted-strong); font-size: .8125rem; font-weight: 500; grid-row: 1; }
