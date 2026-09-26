@@ -130,7 +130,7 @@ Isso remove perfil, disciplinas, atividades e avaliações dessa origem. A açã
 
 ## Testes
 
-Foram percorridos no Chrome, em prévia HTTP local temporária, os 15 fluxos funcionais da especificação. Foram encontrados e corrigidos um erro no cadastro, a ausência de animação pelos detalhes e o tratamento insuficiente de registros inválidos. Os fluxos corrigidos foram repetidos e o console final ficou sem erros ou avisos. As verificações incluíram a navegação desktop e mobile, com tela estreita de 320 px CSS, diálogo sem transbordamento e semana sem rolagem horizontal.
+Foram percorridos no Chrome, em prévia HTTP local temporária, os 15 fluxos funcionais da especificação. Foram encontrados e corrigidos um erro no cadastro, a ausência de animação pelos detalhes e o tratamento insuficiente de registros inválidos. Os fluxos corrigidos foram repetidos e o console final ficou sem erros ou avisos. As verificações incluíram a navegação desktop e mobile em larguras CSS de 320, 390, 767, 900 e 1440 px, diálogo sem transbordamento e semana sem rolagem horizontal. Também foram conferidos Tab, Escape, retorno do foco e persistência após fechar e reabrir a aba.
 
 | Fluxo | Como reproduzir |
 | --- | --- |
@@ -157,6 +157,8 @@ node --test tests/core.test.cjs
 ```
 
 Node.js é usado somente nessa verificação opcional e não faz parte dos requisitos para abrir ou usar o Organizaê.
+
+A suíte passou no fuso local e também em `America/New_York` e `Pacific/Kiritimati`. O caso de Nova York confirma que dois dias civis continuam sendo dois dias mesmo quando a mudança de horário de verão reduz o intervalo real a 47 horas.
 
 ## Publicação futura no GitHub Pages
 

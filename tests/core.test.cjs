@@ -42,7 +42,9 @@ test('calendar arithmetic across leap day, month, year and DST', () => {
   assert.equal(T.addDays(1,'2024-02-28'),'2024-02-29');
   assert.equal(T.addDays(1,'2025-02-28'),'2025-03-01');
   assert.equal(T.addDays(1,'2026-12-31'),'2027-01-01');
+  assert.equal(T.addDays(2,'2026-03-07'),'2026-03-09');
   assert.equal(T.daysUntil('2026-03-09','2026-03-07'),2);
+  if (process.env.TZ === 'America/New_York') assert.equal((T.fromKey('2026-03-09') - T.fromKey('2026-03-07')) / 3600000, 47);
   assert.equal(T.validDate('2025-02-29'),false);
   assert.equal(T.validDate('2024-02-29'),true);
 });
