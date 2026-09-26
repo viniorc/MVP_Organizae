@@ -1,0 +1,104 @@
+(function () {
+  'use strict';
+  const DAY = 86400000;
+  const priorities = { alta: 30, media: 15, baixa: 5 };
+  const priorityNames = { baixa: 'Baixa', media: 'Média', alta: 'Alta' };
+  const types = { atividade: ['📄', 'Atividade'], trabalho: ['📝', 'Trabalho'], estudo: ['📚', 'Estudo'], seminario: ['🎤', 'Seminário'], prova: ['🧪', 'Prova'], outro: ['📌', 'Outro'] };
+
+  function dateKey(date = new Date()) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  }
+  function fromKey(value) {
+    const [year, month, day] = value.split('-').map(Number);
+    return new Date(year, month - 1, day, 12);
+  }
+  function validDate(value) {
+    return /^\d{4}-\d{2}-\d{2}$/.test(value || '') && dateKey(fromKey(value)) === value && Number(value.slice(0, 4)) >= 1000;
+  }
+  function addDays(amount, base = dateKey()) {
+    const date = fromKey(base);
+    date.setDate(date.getDate() + amount);
+    return dateKey(date);
+  }
+  function daysUntil(value, today = dateKey()) {
+    // Compare calendar dates, independently of timezone and daylight-saving changes.
+    const utcDay = key => { const [y, m, d] = key.split('-').map(Number); return Date.UTC(y, m - 1, d); };
+    return Math.round((utcDay(value) - utcDay(today)) / DAY);
+  }
+  function score(task, today = dateKey()) {
+    const days = daysUntil(task.dataEntrega, today);
+    const deadline = days < 0 ? 100 : days === 0 ? 80 : days === 1 ? 70 : days <= 3 ? 55 : days <= 7 ? 35 : 15;
+    return deadline + priorities[task.prioridade];
+  }
+  function ordered(tasks, today = dateKey()) {
+    return tasks.filter(t => t.status === 'pendente').slice().sort((a, b) => {
+      // The explicit rule "overdue first" takes precedence over the suggested points.
+      const overdue = Number(daysUntil(b.dataEntrega, today) < 0) - Number(daysUntil(a.dataEntrega, today) < 0);
+      return overdue || score(b, today) - score(a, today) || a.dataEntrega.localeCompare(b.dataEntrega) || a.dataCriacao.localeCompare(b.dataCriacao);
+    });
+  }
+  function deadline(task, today = dateKey()) {
+    if (task.status === 'concluida') return { text: 'Concluída', tone: 'green' };
+    const days = daysUntil(task.dataEntrega, today);
+    const nextMonday = addDays(7, week(today)[0]);
+    const isNextWeek = task.dataEntrega >= nextMonday && task.dataEntrega <= addDays(6, nextMonday);
+    return {
+      text: days < 0 ? '⚠ Atrasada' : days === 0 ? 'Hoje' : days === 1 ? 'Amanhã' : days <= 7 ? `Faltam ${days} dias` : isNextWeek ? 'Próxima semana' : `Faltam ${days} dias`,
+      tone: days <= 2 ? 'red' : days <= 3 ? 'orange' : days <= 7 ? 'yellow' : 'green'
+    };
+  }
+  function counts(tasks, today = dateKey()) {
+    const pending = tasks.filter(t => t.status === 'pendente');
+    return {
+      pending: pending.length,
+      urgent: pending.filter(t => daysUntil(t.dataEntrega, today) <= 2).length,
+      week: pending.filter(t => { const days = daysUntil(t.dataEntrega, today); return days >= 0 && days <= 7; }).length,
+      done: tasks.filter(t => t.status === 'concluida').length
+    };
+  }
+  function week(today = dateKey()) {
+    const day = fromKey(today).getDay();
+    const monday = addDays(-(day === 0 ? 6 : day - 1), today);
+    return Array.from({ length: 7 }, (_, i) => addDays(i, monday));
+  }
+  function normalize(text) { return String(text).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR').trim(); }
+  function search(tasks, disciplines, query) {
+    const term = normalize(query);
+    return tasks.filter(t => normalize(t.titulo).includes(term) || normalize(disciplines.find(d => d.id === t.disciplinaId)?.nome || '').includes(term));
+  }
+  function duration(minutes) { return Number(minutes) === 30 ? '30 min' : Number(minutes) === 180 ? '3h+' : `${Number(minutes) / 60}h`; }
+  function timeRange(task) {
+    if (!task.horarioPlanejado) return 'Sem horário definido';
+    if (Number(task.tempoEstimado) >= 180) return `${task.horarioPlanejado} · 3h+`;
+    const [hours, minutes] = task.horarioPlanejado.split(':').map(Number);
+    const total = hours * 60 + minutes + Number(task.tempoEstimado);
+    return `${task.horarioPlanejado} — ${String(Math.floor(total / 60) % 24).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}${total >= 1440 ? ' (dia seguinte)' : ''}`;
+  }
+  function formatDate(key, options = { day: 'numeric', month: 'long', year: 'numeric' }) {
+    return fromKey(key).toLocaleDateString('pt-BR', options);
+  }
+  function id() { return globalThis.crypto?.randomUUID?.() || `id-${Date.now()}-${Math.random().toString(36).slice(2)}`; }
+  function demo() {
+    const disciplinas = ['Farmacologia', 'Microbiologia', 'MUDE', 'Programação'].map(nome => ({ id: id(), nome }));
+    const examples = [
+      ['Trabalho de MUDE', 2, 'trabalho', 1, 'alta', 120, 0, '19:00', 'pendente'],
+      ['Prova de Microbiologia', 1, 'prova', 3, 'alta', 120, 1, '14:00', 'pendente'],
+      ['Estudar Farmacologia', 0, 'estudo', 5, 'media', 60, 0, '17:00', 'pendente'],
+      ['Exercícios de Programação', 3, 'atividade', 6, 'media', 60, 2, '16:00', 'pendente'],
+      ['Seminário de Microbiologia', 1, 'seminario', 9, 'baixa', 180, null, '', 'pendente'],
+      ['Revisar anotações de Farmacologia', 0, 'estudo', 2, 'baixa', 30, null, '', 'pendente'],
+      ['Leitura para MUDE', 2, 'estudo', -1, 'media', 30, -1, '15:00', 'concluida'],
+      ['Lista de lógica de programação', 3, 'atividade', -2, 'baixa', 60, -2, '10:00', 'concluida']
+    ];
+    const atividades = examples.map(([titulo, d, tipo, offset, prioridade, tempoEstimado, plan, horarioPlanejado, status], i) => ({
+      id: id(), titulo, disciplinaId: disciplinas[d].id, tipo, dataEntrega: addDays(offset), prioridade,
+      tempoEstimado, status, diaPlanejado: plan === null ? null : addDays(plan), horarioPlanejado,
+      dataCriacao: new Date(Date.now() - (examples.length - i) * 60000).toISOString()
+    }));
+    return {
+      perfil: { nome: 'Alex', curso: 'Graduação', semestre: '4', onboardingConcluido: true }, disciplinas, atividades,
+      demonstracao: { atividadeIds: atividades.map(t => t.id), disciplinaIds: disciplinas.map(d => d.id) }
+    };
+  }
+  window.OrgTasks = { dateKey, fromKey, validDate, addDays, daysUntil, score, ordered, deadline, counts, week, normalize, search, duration, timeRange, formatDate, id, demo, priorityNames, types };
+})();
