@@ -69,6 +69,44 @@
     const monday = addDays(-(day === 0 ? 6 : day - 1), today);
     return Array.from({ length: 7 }, (_, i) => addDays(i, monday));
   }
+  function monthStart(value = dateKey()) {
+    const date = fromKey(value);
+    return dateKey(new Date(date.getFullYear(), date.getMonth(), 1, 12));
+  }
+  function addMonths(amount, value = dateKey()) {
+    const date = fromKey(monthStart(value));
+    return dateKey(new Date(date.getFullYear(), date.getMonth() + amount, 1, 12));
+  }
+  function monthGrid(value = dateKey()) {
+    const first = monthStart(value);
+    const day = fromKey(first).getDay();
+    const gridStart = addDays(-(day === 0 ? 6 : day - 1), first);
+    const last = addDays(-1, addMonths(1, first));
+    const cells = Math.ceil((daysUntil(last, gridStart) + 1) / 7) * 7;
+    return Array.from({ length: cells }, (_, index) => addDays(index, gridStart));
+  }
+  function filterCalendar(tasks, disciplineId = '', type = '') {
+    return tasks.filter(task => (!disciplineId || task.disciplinaId === disciplineId) && (!type || task.tipo === type));
+  }
+  function calendarEntries(tasks, day) {
+    const entries = [];
+    tasks.forEach(task => {
+      const planned = task.diaPlanejado === day;
+      const due = task.dataEntrega === day;
+      if (planned) entries.push({ task, context: due ? 'planned-due' : 'planned' });
+      else if (due) entries.push({ task, context: 'due' });
+    });
+    return entries.sort((a, b) => {
+      const aKind = a.context.startsWith('planned') ? 0 : 1;
+      const bKind = b.context.startsWith('planned') ? 0 : 1;
+      const aTime = a.context.startsWith('planned') ? (a.task.horarioPlanejado || '99:99') : '99:99';
+      const bTime = b.context.startsWith('planned') ? (b.task.horarioPlanejado || '99:99') : '99:99';
+      return aKind - bKind || aTime.localeCompare(bTime) || a.task.titulo.localeCompare(b.task.titulo, 'pt-BR');
+    });
+  }
+  function dayTasks(tasks, day) {
+    return Array.from(new Map(calendarEntries(tasks, day).map(entry => [entry.task.id, entry.task])).values());
+  }
   function normalize(text) { return String(text).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR').trim(); }
   function search(tasks, disciplines, query) {
     const term = normalize(query);
@@ -108,5 +146,5 @@
       demonstracao: { atividadeIds: atividades.map(t => t.id), disciplinaIds: disciplinas.map(d => d.id) }
     };
   }
-  window.OrgTasks = { dateKey, fromKey, validDate, addDays, daysUntil, score, ordered, deadline, dashboardTasks, counts, week, normalize, search, duration, timeRange, formatDate, id, demo, priorityNames, types };
+  window.OrgTasks = { dateKey, fromKey, validDate, addDays, daysUntil, score, ordered, deadline, dashboardTasks, counts, week, monthStart, addMonths, monthGrid, filterCalendar, calendarEntries, dayTasks, normalize, search, duration, timeRange, formatDate, id, demo, priorityNames, types };
 })();

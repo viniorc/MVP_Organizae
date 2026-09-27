@@ -52,6 +52,30 @@ test('week always starts on Monday and ends on Sunday', () => {
   assert.deepEqual(Array.from(T.week('2026-09-27')), ['2026-09-21','2026-09-22','2026-09-23','2026-09-24','2026-09-25','2026-09-26','2026-09-27']);
   assert.equal(T.week('2027-01-01')[0],'2026-12-28');
 });
+test('month navigation and grids remain local-calendar safe', () => {
+  assert.equal(T.monthStart('2026-09-26'),'2026-09-01');
+  assert.equal(T.addMonths(1,'2026-12-15'),'2027-01-01');
+  assert.equal(T.addMonths(-1,'2026-01-20'),'2025-12-01');
+  const grid = Array.from(T.monthGrid('2026-02-10'));
+  assert.equal(grid.length,35);
+  assert.equal(grid[0],'2026-01-26');
+  assert.equal(grid.at(-1),'2026-03-01');
+});
+test('calendar entries distinguish planning and deadlines without same-day duplicates', () => {
+  const plannedAndDue = task(2,'alta',{id:'same',diaPlanejado:'2026-09-28',horarioPlanejado:'09:00'});
+  const deadlineOnly = task(2,'media',{id:'due'});
+  const plannedEarlier = task(5,'baixa',{id:'split',diaPlanejado:'2026-09-28'});
+  const entries = T.calendarEntries([plannedAndDue,deadlineOnly,plannedEarlier],'2026-09-28');
+  assert.deepEqual(Array.from(entries, entry => [entry.task.id,entry.context]), [['same','planned-due'],['split','planned'],['due','due']]);
+  assert.deepEqual(Array.from(T.dayTasks([plannedAndDue,deadlineOnly,plannedEarlier],'2026-09-28'), item => item.id), ['same','split','due']);
+  assert.deepEqual(Array.from(T.calendarEntries([plannedEarlier],'2026-10-01'), entry => entry.context), ['due']);
+});
+test('calendar filters combine discipline and activity type', () => {
+  const items = [task(1,'alta',{id:'a',disciplinaId:'mude',tipo:'prova'}),task(2,'media',{id:'b',disciplinaId:'mude',tipo:'trabalho'}),task(3,'baixa',{id:'c',disciplinaId:'prog',tipo:'prova'})];
+  assert.deepEqual(Array.from(T.filterCalendar(items,'mude','prova'), item => item.id), ['a']);
+  assert.deepEqual(Array.from(T.filterCalendar(items,'','prova'), item => item.id), ['a','c']);
+  assert.equal(T.filterCalendar(items,'prog','trabalho').length,0);
+});
 test('humanized deadlines do not call a distant date next week', () => {
   assert.equal(T.deadline(task(-1),today).text,'⚠ Atrasada');
   assert.equal(T.deadline(task(0),today).text,'Hoje');

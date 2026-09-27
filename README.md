@@ -31,7 +31,8 @@ Dados de `file://`, `http://localhost` e de uma publicação no GitHub Pages per
 - Seções de atenção, planejamento para hoje e prazos agrupados.
 - Priorização determinística por atraso, proximidade do prazo e prioridade informada.
 - Busca instantânea por título ou disciplina, desconsiderando caixa e acentuação; inclui concluídas nos resultados.
-- Planejamento da semana atual, de segunda a domingo, com horário opcional.
+- Calendário com **Agenda**, **Semana**, **Mês** e **Semestre**; navegação contínua, dias livres, indicadores de carga, filtros e acesso direto a qualquer data.
+- Planejamento em qualquer data, com horário opcional, mantendo um único dia planejado por atividade.
 - Disciplinas com contagem e listas separadas de próximas e concluídas; criação também dentro do formulário de atividade.
 - Feedback de utilidade, recurso mais útil, intenção de uso e comentário opcional.
 - Demonstração com perfil fictício, quatro disciplinas e oito atividades.
@@ -53,10 +54,11 @@ As cinco atividades principais têm entrega em amanhã, +3, +5, +6 e +9 dias. Os
 1. Em **Disciplinas**, crie uma disciplina.
 2. Clique em **Nova atividade** ou no **+** central do celular. Informe título, disciplina, tipo, prazo, prioridade e tempo estimado.
 3. Abra **Prioridades** para consultar a ordem sugerida e **Como isso foi calculado?** para ver a explicação.
-4. Em **Semana**, selecione um dia e clique em **Planejar atividade**. Escolha uma pendente, o dia da semana atual e, se quiser, o horário. Replanejar a mesma atividade substitui seu planejamento anterior.
-5. Conclua pelo checkbox de **Para hoje** ou **Semana**, ou pelos detalhes da atividade. A atividade permanece em **Concluídas** da disciplina.
-6. Abra uma atividade para editar seus campos ou excluir com confirmação.
-7. Use **Avaliar experiência** no Dashboard, na sidebar ou no ícone de conversa do topo no celular.
+4. Em **Calendário**, use a Agenda para acompanhar o que vem pela frente ou alterne entre Semana, Mês e Semestre. Use **Hoje**, **Ir para data** e **Filtros** para ajustar a visualização.
+5. Selecione um dia livre e clique em **Planejar neste dia**. Escolha uma pendente e, se quiser, informe o horário. Replanejar a mesma atividade substitui seu planejamento anterior.
+6. Conclua pelo checkbox de **Para hoje** ou da visualização semanal, ou pelos detalhes da atividade. A atividade permanece em **Concluídas** da disciplina.
+7. Abra uma atividade para editar seus campos ou excluir com confirmação.
+8. Use **Avaliar experiência** no Dashboard, na sidebar ou no ícone de conversa do topo no celular.
 
 ## Regras de datas e prioridade
 
@@ -83,7 +85,8 @@ Na tela de prioridades, **Faça primeiro** reúne atrasadas e pontuações a par
 
 - **Urgentes:** pendentes atrasadas ou com entrega até hoje +2 dias.
 - **Esta semana, no indicador:** pendentes com entrega de hoje até hoje +7 dias, inclusive. Atrasadas ficam fora desse indicador.
-- **Semana, na tela de planejamento:** os sete dias da semana civil atual, de segunda a domingo.
+- **Calendário:** a Semana sempre usa os sete dias da semana civil, de segunda a domingo. Agenda, Mês e Semestre aceitam prazos e planejamentos futuros sem limite semanal.
+- **Prazo e planejamento:** `dataEntrega` alimenta todas as visualizações; `diaPlanejado` e `horarioPlanejado` continuam opcionais. Quando planejamento e entrega coincidem, a atividade aparece uma única vez com os dois contextos.
 - **Prazos humanizados:** atrasada, hoje, amanhã e “Faltam N dias”. “Próxima semana” é usado para datas além de sete dias que ainda pertençam à próxima semana civil.
 - **Tempo estimado:** salvo em minutos: 30, 60, 120 ou 180. O valor 180 representa “3h+”; o planejamento não apresenta um término exato para essa opção. Intervalos que cruzam meia-noite indicam “dia seguinte”.
 
@@ -131,27 +134,23 @@ Isso remove perfil, disciplinas, atividades e avaliações dessa origem. A açã
 
 ## Testes
 
-Foram percorridos no Chrome, em prévia HTTP local temporária, os 15 fluxos funcionais da especificação. Foram encontrados e corrigidos um erro no cadastro, a ausência de animação pelos detalhes e o tratamento insuficiente de registros inválidos. Os fluxos corrigidos foram repetidos e o console final ficou sem erros ou avisos. As verificações incluíram a navegação desktop e mobile em larguras CSS de 320, 390, 767, 900 e 1440 px, diálogo sem transbordamento e semana sem rolagem horizontal. Também foram conferidos Tab, Escape, retorno do foco e persistência após fechar e reabrir a aba.
+Os 25 fluxos obrigatórios do Calendário foram percorridos no Chrome em prévia HTTP local. A validação incluiu uma tela móvel real emulada de 320 × 844 CSS px, sem transbordamento horizontal da página, e desktop de 1440 px. A faixa semanal mantém os sete dias em um scroller próprio no celular. O console terminou sem erros ou avisos da aplicação.
 
 | Fluxo | Como reproduzir |
 | --- | --- |
-| 1 | Primeiro acesso → onboarding → perfil → Dashboard vazio. |
-| 2 | Criar disciplina → criar atividade; repetir criando disciplina dentro do formulário. Testar obrigatórios vazios. |
-| 3 | Criar atividade para amanhã → conferir urgência e texto “Amanhã”. |
-| 4 | Criar pendentes com prazos e prioridades diferentes → conferir ordem e explicação em Prioridades. |
-| 5 | Planejar para hoje com horário e outro dia sem horário → conferir dia correto na Semana. |
-| 6 | Concluir por checkbox e por detalhes → conferir indicadores e seção Concluídas da disciplina. |
-| 7 | Editar título, disciplina, tipo, prazo, prioridade e tempo → conferir atualização e planejamento preservado. |
-| 8 | Excluir → cancelar e conferir preservação → confirmar e conferir remoção. |
-| 9 | Buscar parte do título, sem acentos e em outra caixa; testar termo inexistente. |
-| 10 | Buscar disciplina → conferir todas as atividades correspondentes. |
-| 11 | Carregar exemplos → conferir indicadores; criar atividade própria → limpar exemplos → conferir preservação. |
-| 12 | Enviar avaliação, incluindo comentário vazio → conferir agradecimento; testar obrigatórios. |
-| 13 | Atualizar/reabrir o endereço de teste → conferir perfil, disciplinas, atividade editada, planejamento e conclusão. Abertura direta por `file://` pendente conforme limitação descrita acima. |
-| 14 | Em celular, conferir navegação inferior, botão central, semana e formulário longo. |
-| 15 | Em desktop, conferir sidebar, cards, listas, detalhes, busca e modais. |
+| 1–3 | Abrir Calendário com Agenda padrão; conferir atividade de amanhã e outra com prazo três meses à frente na Agenda, no Mês e no Semestre. |
+| 4–7 | Abrir Semana, conferir os sete dias e o estado Livre; selecionar um dia livre, abrir o planejamento com a data preenchida e confirmar que a atividade aparece no dia. |
+| 8–9 | Navegar para a semana seguinte e retornar à anterior. |
+| 10–13 | Abrir o Mês, conferir a grade de segunda a domingo, a contagem de três atividades, o detalhe do dia e a navegação por vários meses. |
+| 14–15 | Abrir o Semestre com seis meses e entrar no Mês a partir de um card mensal. |
+| 16–17 | Usar Ir para data e Hoje nos modos de calendário. |
+| 18–19 | Aplicar e limpar filtros por disciplina e por tipo, inclusive em combinação. |
+| 20–22 | Atualizar a página, conferir persistência, atividades anteriores e os dados de demonstração. |
+| 23–25 | Conferir mobile de 320 px, desktop de 1440 px e console sem erros. |
 
-Há também **14 testes automatizados**, cobrindo todas as faixas de pontuação, desempates, exclusão de concluídas, limites dos indicadores, mudança de mês/ano, ano bissexto, horário de verão, busca, intervalos, demonstração, persistência e falhas de armazenamento. Para executá-los, desenvolvedores que já tenham Node.js podem usar:
+A regressão também cobriu Dashboard e seus cards clicáveis, Prioridades, busca, cadastro, edição, cancelamento e confirmação de exclusão, conclusão, Disciplinas, feedback e persistência após recarregar.
+
+Há também **17 testes automatizados**, cobrindo as regras anteriores e os novos cálculos de grade mensal, navegação por mês, contextos de planejamento/entrega sem duplicidade e filtros combinados do Calendário. Para executá-los, desenvolvedores que já tenham Node.js podem usar:
 
 ```sh
 node --test tests/core.test.cjs
@@ -170,7 +169,7 @@ O projeto está preparado para hospedagem estática: publique `index.html` e as 
 1. Centralizar atividades e prazos facilita a visualização da rotina acadêmica.
 2. Mostrar atividades próximas do prazo ajuda a acompanhar as obrigações.
 3. Apresentar prioridades ajuda a decidir o que fazer primeiro.
-4. Visualizar a semana facilita o planejamento antecipado.
+4. Visualizar Agenda, Semana, Mês e Semestre facilita o planejamento antecipado.
 5. Estudantes percebem valor suficiente para considerar o uso na rotina.
 
 O formulário registra percepção de utilidade e intenção de uso. Esses sinais precisam ser analisados no contexto do estudo; não demonstram, por si só, melhoria de desempenho ou organização acadêmica.
